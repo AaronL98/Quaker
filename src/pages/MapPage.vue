@@ -23,13 +23,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="absolute z-10 p-4 w-full h-full pointer-events-none">
-    <StyleSelector />
-    <div class="flex flex-col w-1/12 h-full bg-surface-0">
-      <Button label="Zoom In" icon="pi pi-plus" @click="map.zoomIn()" />
-      <Button label="Zoom Out" icon="pi pi-minus" @click="map.zoomOut()" />
+  <div class="relative">
+    <!-- UI Overlays -->
+    <div class="h-screen absolute w-full">
+      <div id="map" class="absolute inset-0 h-full w-full z-0"></div>
+    </div>
+
+    <!-- UI elements container-->
+    <div class="relative p-4 pointer-events-none">
+      <StyleSelector class="flex ml-auto pointer-events-auto" />
     </div>
   </div>
-
-  <div id="map" class="h-screen"></div>
 </template>
