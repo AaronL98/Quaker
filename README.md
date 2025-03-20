@@ -1,5 +1,39 @@
-# Vue 3 + TypeScript + Vite
+# Welcome to Quaker
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Run Quaker Locally
+
+### Clone this repository
+
+### Navigate to this repository
+
+```shell
+cd path/to/files
+```
+
+### Add a Mapbox API key
+
+- Create a file named `.env` in the root directory of this project
+- Add an entry for `VITE_MAPBOX_API_KEY` and set it to your public Mapbox API key
+- Save the file
+
+The file should look like:
+
+```
+VITE_MAPBOX_API_KEY=pk.xxxxxxxxxx
+```
+
+### Install dependencies
+
+```shell
+npm install
+```
+
+### Run the app
+
+```shell
+npm run dev
+```
+
+Vite should give you a `localhost` URL where you can access the app.
