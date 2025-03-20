@@ -3,5 +3,7 @@ import Button from 'primevue/button';
 </script>
 
 <template>
-  <Button icon="pi pi-layer" rounded />
+  <div>
+    <Button icon="mdi mdi-layers" class="shadow-xl" rounded size="large" severity="secondary" />
+  </div>
 </template>
