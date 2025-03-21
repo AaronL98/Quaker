@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted } from 'vue';
 import StyleSelector from '@/components/StyleSelector.vue';
+import EarthquakeList from '@/components/EarthquakeList.vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
-import type { SourceData } from '@/consts/sourceData.types';
 import axios from 'axios';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -17,7 +17,10 @@ onMounted(async () => {
   //Load the data from the USGS Earthquake API and add it to the map
   mapStore.map?.on('load', async () => {
     await loadData(
-      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+      //All over 1 mag, the last week
+      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson',
+      //All the last month
+      //'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
       'earthquakes',
     );
 
@@ -48,32 +51,32 @@ onUnmounted(() => {
 
 const loadData = async (endpoint: string, name: string) => {
   //Load the GeoJSON from the USGS Earthquake API into the sourceData store
-  await axios
-    .get(endpoint)
-    .then((response: any) => {
-      console.log(response.data);
-
-      sourceDataStore.addSourceData({
-        id: name,
-        data: response.data,
-      });
-    })
-    .catch((error: any) => {
-      console.error('Failed to fetch data', error);
+  try {
+    const response = await axios.get(endpoint);
+    sourceDataStore.addSourceData({
+      id: name,
+      data: response.data,
     });
+  } catch (error) {
+    console.error('Failed to fetch data', error);
+  }
 };
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative h-screen">
     <!-- UI Overlays -->
     <div class="h-screen absolute w-full">
       <div id="map" class="absolute inset-0 h-full w-full z-0"></div>
     </div>
 
     <!-- UI elements container-->
-    <div class="relative p-4 pointer-events-none">
-      <StyleSelector class="flex ml-auto pointer-events-auto" />
+    <div class="relative h-screen p-4 pointer-events-none z-10">
+      <div class="flex h-full">
+        <!--Flexbox for all UI elements-->
+        <EarthquakeList class="pointer-events-auto" />
+        <StyleSelector class="ml-auto pointer-events-auto" />
+      </div>
     </div>
   </div>
 </template>
