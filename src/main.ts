@@ -6,8 +6,10 @@ import router from './router';
 import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
+import { createPinia } from 'pinia';
 
 const app = createApp(App);
+const pinia = createPinia();
 app.use(router);
 
 const QuakerPreset = definePreset(Aura, {
@@ -36,4 +38,5 @@ app.use(PrimeVue, {
     },
   },
 });
+app.use(pinia);
 app.mount('#app');
