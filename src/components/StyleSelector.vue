@@ -63,7 +63,7 @@ const setStyle = async (styleUrl: string) => {
           <img
             @click="setStyle(style.url)"
             :src="getThumbnail(style.username, style.id)"
-            class="hover:border-primary-400 border-surface-800 border-1 cursor-pointer"
+            class="hover:border-primary-400 border-surface-800 rounded-md border-1 cursor-pointer"
             :alt="style.name" />
         </OverlayBadge>
       </div>
