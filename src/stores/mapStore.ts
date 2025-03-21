@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import mapboxgl, { LngLat } from 'mapbox-gl';
+import type { Map as MapboxMap, StyleSpecification } from 'mapbox-gl';
 
 export const useMapStore = defineStore('map', () => {
-  const map = ref<mapboxgl.Map | null>(null);
+  const map = ref<MapboxMap | null>(null);
+  const localStyle = ref<StyleSpecification | undefined>(undefined);
 
   //Actions
   const initMap = (mapContainer: string, accessToken: string) => {
@@ -15,38 +17,27 @@ export const useMapStore = defineStore('map', () => {
       center: [-74.5, 40],
       zoom: 9,
     });
+
+    map?.value.on('style.load', updateLocalStyleRef);
   };
 
   const cleanupMap = () => {
-    //TODO: Tidy up any layers and sources here too.
-
     if (map.value) {
+      map.value?.off('style.load', updateLocalStyleRef);
       map.value.remove();
     }
   };
 
-  let isStyleChanging = false;
+  //Holding a ref of style because it is not reactive, and we need to
+  //retrieve the style's name reactively
+  const updateLocalStyleRef = () => {
+    localStyle.value = map.value?.getStyle() || undefined;
+  };
 
   const setStyle = async (styleUrl: string) => {
-    if (isStyleChanging) {
-      return Promise.reject(new Error('Style change already in progress'));
-    }
+    if (!map.value) throw new Error('Map is not initialized');
 
-    isStyleChanging = true;
-
-    return new Promise<void>((resolve, reject) => {
-      map.value?.once('style.load', () => {
-        isStyleChanging = false;
-        resolve();
-      });
-
-      try {
-        map.value?.setStyle(styleUrl);
-      } catch (error) {
-        isStyleChanging = false;
-        reject(error);
-      }
-    });
+    map.value?.setStyle(styleUrl);
   };
 
   //Getters
@@ -54,7 +45,7 @@ export const useMapStore = defineStore('map', () => {
 
   const getZoom = computed<number>(() => map.value?.getZoom() || 9);
 
-  const getStyleName = computed<string>(() => map.value?.getStyle()?.name || '');
+  const getStyle = computed(() => localStyle.value);
 
-  return { map, initMap, cleanupMap, setStyle, getCenter, getZoom, getStyleName };
+  return { map, initMap, cleanupMap, setStyle, getCenter, getZoom, getStyle };
 });

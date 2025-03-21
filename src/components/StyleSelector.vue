@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Button from 'primevue/button';
 import OverlayBadge from 'primevue/overlaybadge';
 import Popover from 'primevue/popover';
@@ -20,25 +20,20 @@ const toggle = (event: any) => {
 };
 
 const accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
-console.log('accessToken', accessToken);
 
 const getThumbnail = (styleUsername: string, styleId: string) => {
   const center: LngLat = mapStore.getCenter;
   const zoom: number = mapStore.getZoom;
 
   return getMapStyleThumbnail(styleUsername, styleId, center.lng, center.lat, zoom, accessToken);
-  // return getMapStyleThumbnail('test', accessToken);
 };
 
-const activeStyleName = computed(() => {
-  console.log('');
-  return mapStore.getStyleName;
+const activeStyleName = computed<string>(() => {
+  return mapStore.getStyle?.name || '';
 });
 
 const setStyle = async (styleUrl: string) => {
   await mapStore.setStyle(styleUrl);
-
-  console.log('new active style', activeStyleName.value);
 };
 </script>
 
