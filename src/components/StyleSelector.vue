@@ -40,6 +40,7 @@ const setStyle = async (styleUrl: string) => {
 <template>
   <div>
     <Button
+      v-tooltip.left="'Select a map style'"
       @click="toggle"
       icon="mdi mdi-layers"
       class="shadow-xl"
