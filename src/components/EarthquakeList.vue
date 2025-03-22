@@ -1,17 +1,40 @@
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
+
+//Components
 import Card from 'primevue/card';
-import { useSourceDataStore } from '@/stores/sourceDataStore';
-import type { Earthquake } from '@/consts/earthquake.types';
+import DatePicker from 'primevue/datepicker';
+import InputText from 'primevue/inputtext';
 import Listbox from 'primevue/listbox';
+
+//Types
+import type { Earthquake } from '@/consts/earthquake.types';
 import type { FeatureCollection } from 'geojson';
 import type { Feature } from 'geojson';
+
+//Store
+import { useSourceDataStore } from '@/stores/sourceDataStore';
+import { useEarthquakeStateStore } from '@/stores/earthquakeStateStore';
+import { storeToRefs } from 'pinia';
+
+//Helpers
 import { formatDate } from '@/helpers/formatDate.ts';
 import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon.ts';
 
 const sourceDataStore = useSourceDataStore();
+const earthquakeStateStore = useEarthquakeStateStore();
 
-const selectedEarthquake = ref<Earthquake | null>(null);
+const { selectedEarthquake, filterSearchTerm, filterDates } = storeToRefs(earthquakeStateStore);
+
+const minimumDate = computed<Date>(() => {
+  //Return date 30 days ago
+  return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+});
+
+const maximumDate = computed<Date>(() => {
+  //Return today's date
+  return new Date();
+});
 
 const data = computed<FeatureCollection>(() => {
   return (
@@ -37,14 +60,45 @@ const earthquakes = computed<Earthquake[]>(() => {
     };
   });
 
+  //TODO: Remove
   console.log(mappedData);
 
   return mappedData;
 });
+
+const filteredEarthquakes = computed<Earthquake[]>(() => {
+  return earthquakes.value.filter((earthquake: Earthquake) => {
+    // If search term exists, check if place includes it
+    if (
+      filterSearchTerm.value &&
+      !earthquake.place.toLowerCase().includes(filterSearchTerm.value.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Date filtering
+    if (earthquakeStateStore.filterDates?.length === 2) {
+      const earthquakeDate = new Date(earthquake.time);
+
+      const startDate = new Date(earthquakeStateStore.filterDateFromTimestamp);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(earthquakeStateStore.filterDateToTimestamp);
+      endDate.setHours(23, 59, 59, 999);
+
+      if (earthquakeDate < startDate || earthquakeDate > endDate) {
+        return false;
+      }
+    }
+
+    // If we didn't return false above, this earthquake passes all filters
+    return true;
+  });
+});
 </script>
 <template>
   <Card
-    class="!w-70"
+    class="!w-80"
     :pt="{
       body: {
         class: '!p-3 h-full',
@@ -57,13 +111,29 @@ const earthquakes = computed<Earthquake[]>(() => {
     <template #subtitle>Seismic earthquake data provided by USGS.gov</template>
 
     <template #content>
-      <span class="text-sm">Showing {{ earthquakes.length }} earthquakes</span>
+      <InputText v-model="filterSearchTerm" placeholder="Search for a location" class="mb-2" />
+      <DatePicker
+        v-model="filterDates"
+        :minDate="minimumDate"
+        :maxDate="maximumDate"
+        :manualInput="false"
+        class="mb-2"
+        placeholder="Select a date range"
+        selectionMode="range"
+        iconDisplay="input"
+        showIcon
+        showButtonBar>
+      </DatePicker>
+
+      <span class="text-sm text-surface-500 dark:text-surface-400 mx-auto"
+        >Showing {{ filteredEarthquakes.length }} earthquakes</span
+      >
 
       <div class="grow">
         <!-- Virtually scrolls to handle lots of results -->
         <Listbox
           v-model="selectedEarthquake"
-          :options="earthquakes"
+          :options="filteredEarthquakes"
           optionLabel="place"
           optionValue="id"
           :virtualScrollerOptions="{ itemSize: 55 }"
