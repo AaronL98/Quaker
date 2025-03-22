@@ -13,6 +13,7 @@ export const useMapStore = defineStore('map', () => {
 
     map.value = new mapboxgl.Map({
       container: mapContainer,
+      projection: 'globe',
       style: 'mapbox://styles/mapbox/streets-v12',
       center: [-74.5, 40],
       zoom: 9,
