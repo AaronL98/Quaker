@@ -1,6 +1,8 @@
 # Welcome to Quaker
 
 This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
+![image](https://github.com/user-attachments/assets/78c538dc-a6fd-48e0-bb02-b17ada28fefc)
+
 
 ## Run Quaker Locally
 
