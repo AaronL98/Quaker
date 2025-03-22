@@ -7,3 +7,15 @@
   font-family: 'Inter', sans-serif;
   font-size: 12px;
 }
+
+.mapboxgl-popup-content {
+  background-color: var(--p-card-background) !important;
+  color: var(--p-card-color) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: calc(var(--spacing) * 3) !important;
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: var(--p-card-background) !important;
+}

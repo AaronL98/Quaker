@@ -7,6 +7,8 @@ import { useSourceDataStore } from '@/stores/sourceDataStore';
 import { useEarthquakeStateStore } from '@/stores/earthquakeStateStore';
 import { storeToRefs } from 'pinia';
 import axios from 'axios';
+import { getTimeAgo, formatDateTime } from '@/helpers/formatDate';
+import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl, { LngLat } from 'mapbox-gl';
@@ -108,10 +110,34 @@ const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
     earthquakeFeature.geometry.coordinates[1],
   );
 
+  const timestamp = earthquakeFeature.properties?.time;
+  const magnitude = earthquakeFeature.properties?.mag;
+
   // @ts-ignore
   popup.value
     .setLngLat(coords)
-    .setHTML(`<span class='font-bold text-xl'>${earthquakeFeature.properties?.place}</span>`)
+    .setHTML(
+      `
+      <div class='flex flex-col'>
+        <div class='mb-2'>
+          <div class='mdi ${getMagnitudeIcon(earthquakeFeature.properties?.mag)}'>
+            <span class='font-bold'>${earthquakeFeature.properties?.place}</span>
+          </div>
+          <span class='mdi mdi-history' />
+          <span class="text-sm">${getTimeAgo(timestamp)}</span>
+        </div>
+        <div class="border-1 rounded-md border-surface-300 bg-surface-100 dark:border-surface-700 dark:bg-surface-800 p-2 text-sm">
+        
+          <div>Magnitude: ${magnitude}</div>
+          <div>Date ${formatDateTime(timestamp)}</div>
+          <div>Coordinates:</div>
+          <div class="ml-2">Lat: ${coords.lat.toFixed(2)}</div>
+          <div class="ml-2">Lat: ${coords.lng.toFixed(2)}</div>
+        </div>
+      
+      </div>
+    `,
+    )
     // @ts-ignore
     .addTo(map);
 
