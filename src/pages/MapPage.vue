@@ -11,6 +11,52 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const mapStore = useMapStore();
 const sourceDataStore = useSourceDataStore();
 
+const addEarthquakeSource = () => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add earthquake source');
+    return;
+  }
+
+  if (map.getSource('earthquakes')) {
+    console.warn('Earthquake source already exists, removing it before adding it again');
+    map.removeSource('earthquakes');
+  }
+
+  map.addSource('earthquakes', {
+    type: 'geojson',
+    data: sourceDataStore.getSourceData('earthquakes')?.data,
+  });
+};
+
+// Function to add earthquake layers
+const addEarthquakeLayers = () => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add earthquake layer');
+    return;
+  }
+
+  if (map.getLayer('earthquakes')) {
+    console.error('Earthquake layer already exists');
+  }
+
+  // Regular earthquakes layer
+  map.addLayer({
+    id: 'earthquakes',
+    type: 'circle',
+    source: 'earthquakes',
+    paint: {
+      'circle-color': '#f00',
+      'circle-radius': 6,
+      'circle-stroke-width': 1,
+      'circle-stroke-color': '#fff',
+    },
+  });
+
+  //Can add more layers here, like heatmap, etc.
+};
+
 onMounted(async () => {
   mapStore.initMap('map', import.meta.env.VITE_MAPBOX_API_KEY);
 
@@ -24,23 +70,14 @@ onMounted(async () => {
       'earthquakes',
     );
 
-    //Add the new data to the map as a source
-    mapStore.map?.addSource('earthquakes', {
-      type: 'geojson',
-      data: sourceDataStore.getSourceData('earthquakes')?.data,
-    });
+    addEarthquakeSource();
+    addEarthquakeLayers();
 
-    //Add the data to the map as a layer
-    mapStore.map?.addLayer({
-      id: 'earthquakes',
-      type: 'circle',
-      source: 'earthquakes',
-      paint: {
-        'circle-color': '#f00',
-        'circle-radius': 6,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#fff',
-      },
+    mapStore.map?.on('style.load', () => {
+      addEarthquakeSource();
+      addEarthquakeLayers();
+
+      //TODO: Re-apply the selected earthquake if one is selected
     });
   });
 });
