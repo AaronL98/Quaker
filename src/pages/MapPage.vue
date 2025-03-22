@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import StyleSelector from '@/components/StyleSelector.vue';
+import VisualisationSelector from '@/components/VisualisationSelector.vue';
 import EarthquakeList from '@/components/EarthquakeList.vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
@@ -12,6 +13,8 @@ import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl, { LngLat } from 'mapbox-gl';
+import * as turf from '@turf/turf';
+import type { Feature, FeatureCollection, Polygon, Point, GeoJsonProperties } from 'geojson';
 
 const mapStore = useMapStore();
 const sourceDataStore = useSourceDataStore();
@@ -19,6 +22,16 @@ const earthquakeStateStore = useEarthquakeStateStore();
 const { selectedEarthquakeId } = storeToRefs(earthquakeStateStore);
 
 const popup = ref<mapboxgl.Popup | null>(null);
+
+const addAtmosphere = () => {
+  mapStore.map?.setFog({
+    color: 'rgb(46, 120, 135)',
+    'high-color': 'rgb(20, 55, 155)',
+    'horizon-blend': 0.01,
+    'space-color': 'rgb(11, 11, 25)',
+    'star-intensity': 0.3,
+  });
+};
 
 const addEarthquakeSource = () => {
   const map = mapStore.map;
@@ -35,6 +48,61 @@ const addEarthquakeSource = () => {
   map.addSource('earthquakes', {
     type: 'geojson',
     data: sourceDataStore.getSourceData('earthquakes')?.data,
+  });
+};
+
+const addEarthquakeMagnitudePolygonSource = () => {
+  //Adds a source for the earthquakes as polygons, size based on magnitude
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add earthquake magnitude polygon source');
+    return;
+  }
+
+  if (map.getSource('earthquakes-magnitude-polygons')) {
+    console.warn(
+      'Earthquake magnitude polygon source already exists, removing it before adding it again',
+    );
+    map.removeSource('earthquakes-magnitude-polygons');
+  }
+
+  const rawData = sourceDataStore.getSourceData('earthquakes')?.data.features ?? []; // Ensure it's always an array
+
+  const data: FeatureCollection<Point, GeoJsonProperties> = {
+    type: 'FeatureCollection',
+    features: rawData.filter(
+      (feature): feature is Feature<Point> => feature.geometry.type === 'Point',
+    ),
+  };
+
+  if (!data) {
+    console.error('No data found for earthquake magnitude polygons');
+    return;
+  }
+
+  const polygons: FeatureCollection<Polygon> = {
+    type: 'FeatureCollection',
+    features: (data?.features ?? []).map((feature: Feature<Point>): Feature<Polygon> => {
+      const magnitude = feature.properties?.mag || 0;
+      // Radius based on magnitude - Magnitude 0 = 0.2km, Magnitude 10 = 30km
+      const radius = Math.max(magnitude * 10, 0.2);
+
+      const circle = turf.circle(feature.geometry.coordinates, radius, {
+        steps: 64,
+        units: 'kilometers',
+      });
+
+      return {
+        type: 'Feature',
+        geometry: circle.geometry as Polygon, // Ensure the geometry is a Polygon
+        properties: feature.properties || {}, // Keep properties or set an empty object
+      };
+    }),
+  };
+
+  map.addSource('earthquakes-magnitude-polygons', {
+    type: 'geojson',
+    data: polygons,
   });
 };
 
@@ -66,13 +134,71 @@ const addEarthquakeLayers = () => {
   //Can add more layers here, like heatmap, etc.
 };
 
-const addAtmosphere = () => {
-  mapStore.map?.setFog({
-    color: 'rgb(46, 120, 135)',
-    'high-color': 'rgb(20, 55, 155)',
-    'horizon-blend': 0.01,
-    'space-color': 'rgb(11, 11, 25)',
-    'star-intensity': 0.3,
+const add3DMagnitudeLayers = () => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add 3D extrusion layer');
+    return;
+  }
+
+  if (map.getLayer('earthquakes-3d')) {
+    console.error('3D extrusion layer already exists');
+  }
+
+  // 3D extrusion layer
+  map.addLayer({
+    id: '3d-magnitudes',
+    type: 'fill-extrusion',
+    source: 'earthquakes-magnitude-polygons',
+    // filter: ['==', '$type', 'Point'],
+    paint: {
+      'fill-extrusion-base': 0,
+      //Height based on magnitude
+      'fill-extrusion-height': [
+        'interpolate',
+        ['linear'],
+        ['get', 'mag'],
+        0,
+        0,
+        2,
+        50000,
+        4,
+        150000,
+        6,
+        400000,
+        8,
+        650000,
+        10,
+        1500000,
+      ],
+
+      //Colour based on magnitude, green -> yellow -> red
+      'fill-extrusion-color': [
+        'interpolate',
+        ['linear'],
+        ['get', 'mag'],
+        0,
+        '#fff',
+        2,
+        '#0f0',
+        4,
+        '#ff0',
+        6,
+        '#f90',
+        8,
+        '#f60',
+        10,
+        '#f00',
+      ],
+      // 'fill-extrusion-opacity': 0.9,
+      'fill-extrusion-vertical-gradient': false,
+    },
+  });
+
+  map.easeTo({
+    pitch: 60,
+    bearing: 0,
+    duration: 1000,
   });
 };
 
@@ -137,14 +263,14 @@ const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
           <span class="text-sm">${getTimeAgo(timestamp)}</span>
         </div>
         <div class="border-1 rounded-md border-surface-300 bg-surface-100 dark:border-surface-700 dark:bg-surface-800 p-2 text-sm">
-        
+
           <div>Magnitude: ${magnitude}</div>
           <div>Date ${formatDateTime(timestamp)}</div>
           <div>Coordinates:</div>
           <div class="ml-2">Lat: ${coords.lat.toFixed(2)}</div>
           <div class="ml-2">Lat: ${coords.lng.toFixed(2)}</div>
         </div>
-      
+
       </div>
     `,
     )
@@ -170,7 +296,12 @@ onMounted(async () => {
     );
 
     addEarthquakeSource();
+    addEarthquakeMagnitudePolygonSource();
+
     addEarthquakeLayers();
+    setTimeout(() => {
+      add3DMagnitudeLayers();
+    }, 10000);
     addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
@@ -222,7 +353,10 @@ const loadData = async (endpoint: string, name: string) => {
       <div class="flex h-full">
         <!--Flexbox for all UI elements-->
         <EarthquakeList class="pointer-events-auto" />
-        <StyleSelector class="ml-auto pointer-events-auto" />
+        <div class="flex flex-col ml-auto">
+          <VisualisationSelector class="pointer-events-auto mb-4" />
+          <StyleSelector class="pointer-events-auto" />
+        </div>
       </div>
     </div>
   </div>
