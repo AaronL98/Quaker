@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Earthquake } from '@/consts/earthquake.types';
 
 export const useEarthquakeStateStore = defineStore('earthquakeState', () => {
-  const selectedEarthquake = ref<Earthquake | null>();
+  const selectedEarthquakeId = ref<number | null>();
   const filterSearchTerm = ref<string>('');
   const filterDates = ref<Date[]>([]);
 
@@ -20,7 +19,7 @@ export const useEarthquakeStateStore = defineStore('earthquakeState', () => {
   //   const filterToTimestamp = ref<string>('');
 
   return {
-    selectedEarthquake,
+    selectedEarthquakeId,
     filterSearchTerm,
     filterDates,
     filterDateFromTimestamp,
