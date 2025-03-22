@@ -66,6 +66,16 @@ const addEarthquakeLayers = () => {
   //Can add more layers here, like heatmap, etc.
 };
 
+const addAtmosphere = () => {
+  mapStore.map?.setFog({
+    color: 'rgb(46, 120, 135)',
+    'high-color': 'rgb(20, 55, 155)',
+    'horizon-blend': 0.01,
+    'space-color': 'rgb(11, 11, 25)',
+    'star-intensity': 0.3,
+  });
+};
+
 // Function to initialize popup
 const initPopup = () => {
   popup.value = new mapboxgl.Popup({
@@ -161,10 +171,12 @@ onMounted(async () => {
 
     addEarthquakeSource();
     addEarthquakeLayers();
+    addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
       addEarthquakeSource();
       addEarthquakeLayers();
+      addAtmosphere();
 
       //TODO: Re-apply the selected earthquake if one is selected
     });
