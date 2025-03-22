@@ -14,10 +14,6 @@ export const useEarthquakeStateStore = defineStore('earthquakeState', () => {
     return filterDates.value[1]?.getTime();
   });
 
-  //TODO: Timestamps
-  //   const filterFromTimestamp = ref<string>('');
-  //   const filterToTimestamp = ref<string>('');
-
   return {
     selectedEarthquakeId,
     filterSearchTerm,
