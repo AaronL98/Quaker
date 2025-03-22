@@ -44,12 +44,12 @@ const setStyle = async (styleUrl: string) => {
       @click="toggle"
       icon="mdi mdi-layers"
       class="shadow-xl"
-      rounded
       size="large"
-      severity="secondary" />
+      severity="secondary"
+      rounded />
 
     <Popover ref="popover">
-      <div class="font-bold mb-2">Style selector</div>
+      <span class="block font-medium mb-2">Style selector </span>
       <div class="flex gap-4">
         <OverlayBadge
           v-for="style in MAP_STYLES_LIST"
