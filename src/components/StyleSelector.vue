@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import Button from 'primevue/button';
 import OverlayBadge from 'primevue/overlaybadge';
 import Popover from 'primevue/popover';
