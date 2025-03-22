@@ -1,15 +1,22 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import StyleSelector from '@/components/StyleSelector.vue';
 import EarthquakeList from '@/components/EarthquakeList.vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
+import { useEarthquakeStateStore } from '@/stores/earthquakeStateStore';
+import { storeToRefs } from 'pinia';
 import axios from 'axios';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
+import mapboxgl, { LngLat } from 'mapbox-gl';
 
 const mapStore = useMapStore();
 const sourceDataStore = useSourceDataStore();
+const earthquakeStateStore = useEarthquakeStateStore();
+const { selectedEarthquakeId } = storeToRefs(earthquakeStateStore);
+
+const popup = ref<mapboxgl.Popup | null>(null);
 
 const addEarthquakeSource = () => {
   const map = mapStore.map;
@@ -57,8 +64,64 @@ const addEarthquakeLayers = () => {
   //Can add more layers here, like heatmap, etc.
 };
 
+// Function to initialize popup
+const initPopup = () => {
+  popup.value = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+  });
+};
+
+const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to update selected earthquake');
+    return;
+  }
+
+  if (!popup.value) {
+    console.error('Popup not initialized when trying to update selected earthquake');
+    return;
+  }
+
+  if (!earthquakeId) {
+    popup.value.remove();
+    return;
+  }
+
+  const earthquakeFeature = sourceDataStore
+    .getSourceData('earthquakes')
+    ?.data.features.find((feature) => feature.id === earthquakeId);
+
+  if (!earthquakeFeature) {
+    console.error('Earthquake feature not found');
+    return;
+  }
+
+  if (earthquakeFeature.geometry.type !== 'Point') {
+    console.error('Earthquake was not of type Point');
+    return;
+  }
+
+  const coords = new LngLat(
+    earthquakeFeature.geometry.coordinates[0],
+    earthquakeFeature.geometry.coordinates[1],
+  );
+
+  // @ts-ignore
+  popup.value
+    .setLngLat(coords)
+    .setHTML(`<span class='font-bold text-xl'>${earthquakeFeature.properties?.place}</span>`)
+    // @ts-ignore
+    .addTo(map);
+
+  map.flyTo({ center: coords, zoom: 6 });
+};
+
 onMounted(async () => {
   mapStore.initMap('map', import.meta.env.VITE_MAPBOX_API_KEY);
+
+  initPopup();
 
   //Load the data from the USGS Earthquake API and add it to the map
   mapStore.map?.on('load', async () => {
@@ -80,6 +143,15 @@ onMounted(async () => {
       //TODO: Re-apply the selected earthquake if one is selected
     });
   });
+
+  // Watch for changes to selected earthquake
+  watch(
+    selectedEarthquakeId,
+    (earthquakeId) => {
+      updateSelectedEarthquake(earthquakeId);
+    },
+    { immediate: true },
+  );
 });
 
 onUnmounted(() => {

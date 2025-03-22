@@ -24,7 +24,7 @@ import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon.ts';
 const sourceDataStore = useSourceDataStore();
 const earthquakeStateStore = useEarthquakeStateStore();
 
-const { selectedEarthquake, filterSearchTerm, filterDates } = storeToRefs(earthquakeStateStore);
+const { selectedEarthquakeId, filterSearchTerm, filterDates } = storeToRefs(earthquakeStateStore);
 
 const minimumDate = computed<Date>(() => {
   //Return date 30 days ago
@@ -59,9 +59,6 @@ const earthquakes = computed<Earthquake[]>(() => {
       mag: feature.properties?.mag,
     };
   });
-
-  //TODO: Remove
-  console.log(mappedData);
 
   return mappedData;
 });
@@ -137,7 +134,7 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
       <div class="grow">
         <!-- Virtually scrolls to handle lots of results -->
         <Listbox
-          v-model="selectedEarthquake"
+          v-model="selectedEarthquakeId"
           :options="filteredEarthquakes"
           optionLabel="place"
           optionValue="id"

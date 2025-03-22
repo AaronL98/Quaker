@@ -15,10 +15,11 @@ export const useMapStore = defineStore('map', () => {
       container: mapContainer,
       projection: 'globe',
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74.5, 40],
-      zoom: 9,
+      center: [8, 56],
+      zoom: 2.25,
     });
 
+    // @ts-ignore
     map?.value.on('style.load', updateLocalStyleRef);
   };
 
