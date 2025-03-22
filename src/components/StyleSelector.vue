@@ -64,8 +64,10 @@ const setStyle = async (styleUrl: string) => {
           <img
             @click="setStyle(style.url)"
             :src="getThumbnail(style.username, style.id)"
+            :alt="style.name"
             class="hover:border-primary-400 border-surface-800 rounded-md border-1 cursor-pointer"
-            :alt="style.name" />
+            height="50"
+            width="50" />
         </OverlayBadge>
       </div>
     </Popover>
