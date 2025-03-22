@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 //Components
 import Card from 'primevue/card';
@@ -117,8 +117,12 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
         :minDate="minimumDate"
         :maxDate="maximumDate"
         :manualInput="false"
+        placeholder="Select a date range"
         selectionMode="range"
-        showButtonBar />
+        iconDisplay="input"
+        showIcon
+        showButtonBar>
+      </DatePicker>
 
       <span class="text-sm">Showing {{ filteredEarthquakes.length }} earthquakes</span>
 
