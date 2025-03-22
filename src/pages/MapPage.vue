@@ -18,9 +18,9 @@ onMounted(async () => {
   mapStore.map?.on('load', async () => {
     await loadData(
       //All over 1 mag, the last week
-      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson',
+      //'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson',
       //All the last month
-      //'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+      'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
       'earthquakes',
     );
 
