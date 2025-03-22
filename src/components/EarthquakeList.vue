@@ -3,12 +3,15 @@ import { ref, computed } from 'vue';
 import Card from 'primevue/card';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
 import type { Earthquake } from '@/consts/earthquake.types';
-import EarthquakeListItem from '@/components/EarthquakeListItem.vue';
-// import ScrollPanel from 'primevue/scrollpanel';
+import Listbox from 'primevue/listbox';
+import type { FeatureCollection } from 'geojson';
+import type { Feature } from 'geojson';
+import { formatDate } from '@/helpers/formatDate.ts';
+import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon.ts';
 
 const sourceDataStore = useSourceDataStore();
 
-import type { FeatureCollection } from 'geojson';
+const selectedEarthquake = ref<Earthquake | null>(null);
 
 const data = computed<FeatureCollection>(() => {
   return (
@@ -24,13 +27,13 @@ const earthquakes = computed<Earthquake[]>(() => {
     return [];
   }
 
-  const mappedData: Earthquake[] = data.value.features.map((feature: any) => {
+  const mappedData: Earthquake[] = data.value.features.map((feature: Feature) => {
     return {
-      id: feature.id,
-      title: feature.properties.title,
-      place: feature.properties.place,
-      time: feature.properties.time,
-      mag: feature.properties.mag,
+      id: feature.id ? String(feature.id) : 'unknown-id',
+      title: feature.properties?.title,
+      place: feature.properties?.place,
+      time: feature.properties?.time,
+      mag: feature.properties?.mag,
     };
   });
 
@@ -41,13 +44,13 @@ const earthquakes = computed<Earthquake[]>(() => {
 </script>
 <template>
   <Card
-    class="flex flex-col h-full !w-70"
+    class="!w-70"
     :pt="{
       body: {
-        class: 'overflow-hidden',
+        class: '!p-3 h-full',
       },
       content: {
-        class: 'flex flex-col overflow-y-scroll',
+        class: 'flex flex-col grow',
       },
     }">
     <template #title> Recent Earthquakes</template>
@@ -56,15 +59,34 @@ const earthquakes = computed<Earthquake[]>(() => {
     <template #content>
       <span class="text-sm">Showing {{ earthquakes.length }} earthquakes</span>
 
-      <div class="flex-grow">
-        <EarthquakeListItem
-          v-for="quake in earthquakes"
-          :key="quake.id"
-          :id="quake.id"
-          :title="quake.title"
-          :place="quake.place"
-          :time="quake.time"
-          :mag="quake.mag" />
+      <div class="grow">
+        <!-- Virtually scrolls to handle lots of results -->
+        <Listbox
+          v-model="selectedEarthquake"
+          :options="earthquakes"
+          optionLabel="place"
+          optionValue="id"
+          :virtualScrollerOptions="{ itemSize: 55 }"
+          class="w-full h-full"
+          listStyle="height: 100%; max-height: unset"
+          striped>
+          <template #option="slotProps">
+            <div class="flex">
+              <span
+                :class="`mdi mdi-ice ${getMagnitudeIcon(
+                  slotProps.option.mag,
+                )} text-xl mr-2 my-auto`"></span>
+
+              <div class="flex flex-col">
+                {{ slotProps.option.place }}
+                <div class="flex justify-between text-xs">
+                  <span>Mag: {{ slotProps.option.mag }}</span>
+                  <span>{{ formatDate(slotProps.option.time) }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </Listbox>
       </div>
     </template>
   </Card>
