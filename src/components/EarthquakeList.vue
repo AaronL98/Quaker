@@ -117,6 +117,7 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
         :minDate="minimumDate"
         :maxDate="maximumDate"
         :manualInput="false"
+        class="mb-2"
         placeholder="Select a date range"
         selectionMode="range"
         iconDisplay="input"
@@ -124,7 +125,9 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
         showButtonBar>
       </DatePicker>
 
-      <span class="text-sm">Showing {{ filteredEarthquakes.length }} earthquakes</span>
+      <span class="text-sm text-surface-500 dark:text-surface-400 mx-auto"
+        >Showing {{ filteredEarthquakes.length }} earthquakes</span
+      >
 
       <div class="grow">
         <!-- Virtually scrolls to handle lots of results -->
