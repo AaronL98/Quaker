@@ -115,7 +115,7 @@ const addEarthquakeLayers = () => {
     return;
   }
 
-  if (map.getLayer('earthquakes')) {
+  if (map.getLayer(LAYERS.EARTHQUAKES.id)) {
     console.error('Earthquake layer already exists');
   }
 
@@ -132,7 +132,7 @@ const add3DMagnitudeLayers = () => {
     return;
   }
 
-  if (map.getLayer('earthquakes-3d')) {
+  if (map.getLayer(LAYERS.THREE_D_MAGNITUDES.id)) {
     console.error('3D extrusion layer already exists');
   }
 
