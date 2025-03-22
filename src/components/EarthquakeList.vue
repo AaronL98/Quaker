@@ -107,8 +107,13 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
         class: 'flex flex-col grow',
       },
     }">
-    <template #title> Recent Earthquakes</template>
-    <template #subtitle>Seismic earthquake data provided by USGS.gov</template>
+    <template #title>🫨 Quaker</template>
+    <template #subtitle
+      >Real-time earthquake data from the past 30 days, provided by
+      <a href="https://earthquake.usgs.gov/earthquakes/feed/" target="_blank"
+        ><span class="text-primary hover:font-underline font-bold">USGS.gov</span></a
+      ></template
+    >
 
     <template #content>
       <InputText v-model="filterSearchTerm" placeholder="Search for a location" class="mb-2" />
