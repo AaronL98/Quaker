@@ -6,6 +6,7 @@ export interface Visualisation {
   description: string;
   icon: string;
   layers: string[];
+  dimension: '3D' | '2D';
 }
 
 interface VisualisationConsts {
@@ -18,6 +19,7 @@ export const VISUALISATION: VisualisationConsts = {
     description: 'Earthquakes plotted as regular points',
     icon: 'mdi-scatter-plot',
     layers: [LAYERS.EARTHQUAKES.id],
+    dimension: '2D',
   },
   //   CLUSTER: {
   //     id: 'cluster',
@@ -39,5 +41,6 @@ export const VISUALISATION: VisualisationConsts = {
     description: '3D extrusions based on earthquake magnitudes',
     icon: 'mdi-cube',
     layers: [LAYERS.THREE_D_MAGNITUDES.id],
+    dimension: '3D',
   },
 } as const;
