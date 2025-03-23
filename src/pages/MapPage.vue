@@ -1,20 +1,24 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
+import * as turf from '@turf/turf';
+import axios from 'axios';
+import { storeToRefs } from 'pinia';
+
 import StyleSelector from '@/components/StyleSelector.vue';
 import VisualisationSelector from '@/components/VisualisationSelector.vue';
 import EarthquakeList from '@/components/EarthquakeList.vue';
+
 import { useMapStore } from '@/stores/mapStore';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
 import { useEarthquakeStateStore } from '@/stores/earthquakeStateStore';
-import { storeToRefs } from 'pinia';
-import axios from 'axios';
+
 import { getTimeAgo, formatDateTime } from '@/helpers/formatDate';
 import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
-import mapboxgl, { LngLat } from 'mapbox-gl';
-import * as turf from '@turf/turf';
+import mapboxgl, { LngLat, MapMouseEvent, type GeoJSONFeature, type LngLatLike } from 'mapbox-gl';
 import type { Feature, FeatureCollection, Polygon, Point, GeoJsonProperties } from 'geojson';
+
 import { LAYERS } from '@/consts/layers';
 import { VISUALISATION, type Visualisation } from '@/consts/visualisations';
 
@@ -52,6 +56,27 @@ const addEarthquakeSource = () => {
   map.addSource('earthquakes', {
     type: 'geojson',
     data: sourceDataStore.getSourceData('earthquakes')?.data,
+  });
+};
+
+const addClusteredEarthquakeSource = () => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add clustered earthquake source');
+    return;
+  }
+
+  if (map.getSource('earthquakes-clustered')) {
+    console.warn('Clustered earthquake source already exists, removing it before adding it again');
+    map.removeSource('earthquakes-clustered');
+  }
+
+  map.addSource('earthquakes-clustered', {
+    type: 'geojson',
+    data: sourceDataStore.getSourceData('earthquakes')?.data,
+    cluster: true,
+    clusterMaxZoom: 14,
+    clusterRadius: 100,
   });
 };
 
@@ -118,7 +143,7 @@ const initPopup = () => {
   });
 };
 
-const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
+const updateSelectedEarthquake = (earthquakeId: string | null | undefined) => {
   const map = mapStore.map;
   if (!map) {
     console.error('Map not initialized when trying to update selected earthquake');
@@ -185,7 +210,7 @@ const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
     // @ts-ignore
     .addTo(map);
 
-  map.flyTo({ center: coords, zoom: 6 });
+  map.flyTo({ center: coords, zoom: mapStore.getZoom > 5.5 ? mapStore.getZoom : 5.5 });
 };
 
 onMounted(async () => {
@@ -201,12 +226,14 @@ onMounted(async () => {
     );
 
     addEarthquakeSource();
+    addClusteredEarthquakeSource();
     addEarthquakeMagnitudePolygonSource();
     addVisualisationLayers(selectedVisualisationId.value);
     addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
       addEarthquakeSource();
+      addClusteredEarthquakeSource();
       addEarthquakeMagnitudePolygonSource();
       addVisualisationLayers(selectedVisualisationId.value);
 
@@ -235,9 +262,24 @@ onMounted(async () => {
 const addVisualisationLayers = (visualisationId: string) => {
   //Remove the layers of all other VISUALISATION consts if they exist on the map
   Object.values(VISUALISATION).forEach((visualisation: Visualisation) => {
+    //If the visualisation is not the selected one, remove its layers
     if (visualisation.id !== visualisationId) {
       visualisation.layers.forEach((layerId) => {
+        //If the layer exists, remove it
         if (mapStore.map?.getLayer(layerId)) {
+          //Remove any event listeners for the layer
+          switch (layerId) {
+            case LAYERS.EARTHQUAKES.id:
+              togglePointClickHandler(LAYERS.EARTHQUAKES.id, false);
+              break;
+            case LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id:
+              togglePointClickHandler(LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id, false);
+              break;
+            case LAYERS.CLUSTERED_EARTHQUAKES.id:
+              toggleClusterClickHandler(LAYERS.CLUSTERED_EARTHQUAKES.id, false);
+              break;
+          }
+
           mapStore.map?.removeLayer(layerId);
         }
       });
@@ -249,6 +291,17 @@ const addVisualisationLayers = (visualisationId: string) => {
 
   selectedVisualisation.layers.forEach((layer) => {
     mapStore.map?.addLayer(LAYERS[layer]);
+    switch (layer) {
+      case LAYERS.EARTHQUAKES.id:
+        togglePointClickHandler(LAYERS.EARTHQUAKES.id, true);
+        break;
+      case LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id:
+        togglePointClickHandler(LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id, true);
+        break;
+      case LAYERS.CLUSTERED_EARTHQUAKES.id:
+        toggleClusterClickHandler(LAYERS.CLUSTERED_EARTHQUAKES.id, true);
+        break;
+    }
   });
 
   //Set 2D/3D view based on the selected visualisation
@@ -264,6 +317,102 @@ const addVisualisationLayers = (visualisationId: string) => {
       bearing: 0,
       duration: 500,
     });
+  }
+};
+
+const togglePointClickHandler = (layerId: string, enabled: boolean) => {
+  if (!mapStore.map) {
+    console.error('Map not initialized when trying to toggle point click handler');
+    return;
+  }
+
+  const handler = (e: MapMouseEvent) => {
+    const feature = e.features?.[0];
+    if (!feature) return;
+
+    //Hack: USGS returns strings as mapbox feature IDs, but Mapbox needs numerical IDs.
+    //Use the `ids` property (which has a prefix and suffix comma of the ID) to get the numerical ID
+    const earthquakeId = feature.properties?.ids.replace(/,/g, '');
+
+    if (earthquakeId) {
+      selectedEarthquakeId.value = earthquakeId;
+    } else {
+      console.warn('Feature ID is undefined, cannot select earthquake');
+    }
+  };
+
+  if (enabled) {
+    mapStore.map.on('click', layerId, handler);
+    toggleHoverHandler(layerId, true);
+  } else {
+    mapStore.map.off('click', layerId, handler);
+    toggleHoverHandler(layerId, false);
+  }
+};
+
+const toggleClusterClickHandler = (layerId: string, enabled: boolean) => {
+  if (!mapStore.map) {
+    console.error('Map not initialized when trying to toggle cluster click handler');
+    return;
+  }
+
+  const handler = (e: MapMouseEvent) => {
+    const feature: GeoJSONFeature | undefined = e.features?.[0];
+    if (!feature || feature.geometry.type !== 'Point') return;
+
+    const clusterId = feature.properties?.cluster_id;
+    const source = mapStore.map?.getSource('earthquakes-clustered') as mapboxgl.GeoJSONSource;
+
+    source?.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      if (err) return;
+
+      const pointGeometry = feature.geometry as GeoJSON.Point;
+      const coordinates = pointGeometry.coordinates as LngLatLike;
+
+      mapStore.map?.easeTo({
+        center: coordinates,
+        zoom: zoom || 10,
+        duration: 500,
+      });
+    });
+  };
+
+  if (enabled) {
+    mapStore.map.on('click', layerId, handler);
+    toggleHoverHandler(layerId, true);
+  } else {
+    mapStore.map.off('click', layerId, handler);
+    toggleHoverHandler(layerId, false);
+  }
+};
+
+const toggleHoverHandler = (layerId: string, enabled: boolean) => {
+  if (!mapStore.map) {
+    console.error('Map not initialized when trying to toggle hover handler');
+    return;
+  }
+
+  const enterHandler = () => {
+    const canvas = mapStore.map?.getCanvas();
+
+    if (canvas && canvas.style) {
+      canvas.style.cursor = 'pointer';
+    }
+  };
+
+  const leaveHandler = () => {
+    const canvas = mapStore.map?.getCanvas();
+    if (canvas && canvas.style) {
+      canvas.style.cursor = '';
+    }
+  };
+
+  if (enabled) {
+    mapStore.map.on('mouseenter', layerId, enterHandler);
+    mapStore.map.on('mouseleave', layerId, leaveHandler);
+  } else {
+    mapStore.map.off('mouseenter', layerId, enterHandler);
+    mapStore.map.off('mouseleave', layerId, leaveHandler);
   }
 };
 

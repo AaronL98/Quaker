@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 
 export const useEarthquakeStateStore = defineStore('earthquakeState', () => {
-  const selectedEarthquakeId = ref<number | null>();
+  const selectedEarthquakeId = ref<string | null>();
   const filterSearchTerm = ref<string>('');
   const filterDates = ref<Date[]>([]);
 
