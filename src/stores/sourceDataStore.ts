@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { SourceData } from '@/consts/sourceData.types';
 
-//This store will hold source data that can be added to the map
+//This store will hold source data that can be added to a Mapbox source
 export const useSourceDataStore = defineStore('sources', () => {
   const sourceData = ref<SourceData[]>([]);
 
