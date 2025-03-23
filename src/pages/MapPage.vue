@@ -16,11 +16,14 @@ import mapboxgl, { LngLat } from 'mapbox-gl';
 import * as turf from '@turf/turf';
 import type { Feature, FeatureCollection, Polygon, Point, GeoJsonProperties } from 'geojson';
 import { LAYERS } from '@/consts/layers';
+import { VISUALISATION, type Visualisation } from '@/consts/visualisations';
 
 const mapStore = useMapStore();
 const sourceDataStore = useSourceDataStore();
 const earthquakeStateStore = useEarthquakeStateStore();
+
 const { selectedEarthquakeId } = storeToRefs(earthquakeStateStore);
+const { selectedVisualisationId } = storeToRefs(mapStore);
 
 const popup = ref<mapboxgl.Popup | null>(null);
 
@@ -104,45 +107,6 @@ const addEarthquakeMagnitudePolygonSource = () => {
   map.addSource('earthquakes-magnitude-polygons', {
     type: 'geojson',
     data: polygons,
-  });
-};
-
-// Function to add earthquake layers
-const addEarthquakeLayers = () => {
-  const map = mapStore.map;
-  if (!map) {
-    console.error('Map not initialized when trying to add earthquake layer');
-    return;
-  }
-
-  if (map.getLayer(LAYERS.EARTHQUAKES.id)) {
-    console.error('Earthquake layer already exists');
-  }
-
-  // Regular earthquakes layer
-  map.addLayer(LAYERS.EARTHQUAKES);
-
-  //Can add more layers here, like heatmap, etc.
-};
-
-const add3DMagnitudeLayers = () => {
-  const map = mapStore.map;
-  if (!map) {
-    console.error('Map not initialized when trying to add 3D extrusion layer');
-    return;
-  }
-
-  if (map.getLayer(LAYERS.THREE_D_MAGNITUDES.id)) {
-    console.error('3D extrusion layer already exists');
-  }
-
-  // 3D extrusion layer
-  map.addLayer(LAYERS.THREE_D_MAGNITUDES);
-
-  map.easeTo({
-    pitch: 60,
-    bearing: 0,
-    duration: 1000,
   });
 };
 
@@ -232,23 +196,20 @@ onMounted(async () => {
   //Load the data from the USGS Earthquake API and add it to the map
   mapStore.map?.on('load', async () => {
     await loadData(
-      //All over 1 mag, the last week
-      //'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson',
-      //All the last month
       'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
       'earthquakes',
     );
 
     addEarthquakeSource();
     addEarthquakeMagnitudePolygonSource();
-
-    addEarthquakeLayers();
-    add3DMagnitudeLayers();
+    addVisualisationLayers(selectedVisualisationId.value);
     addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
       addEarthquakeSource();
-      addEarthquakeLayers();
+      addEarthquakeMagnitudePolygonSource();
+      addVisualisationLayers(selectedVisualisationId.value);
+
       addAtmosphere();
 
       //TODO: Re-apply the selected earthquake if one is selected
@@ -263,7 +224,33 @@ onMounted(async () => {
     },
     { immediate: true },
   );
+
+  watch(selectedVisualisationId, (newValue, oldValue) => {
+    if (!newValue || !oldValue) return;
+
+    addVisualisationLayers(newValue);
+  });
 });
+
+const addVisualisationLayers = (visualisationId: string) => {
+  //Remove the layers of all other VISUALISATION consts if they exist on the map
+  Object.values(VISUALISATION).forEach((visualisation: Visualisation) => {
+    if (visualisation.id !== visualisationId) {
+      visualisation.layers.forEach((layerId) => {
+        if (mapStore.map?.getLayer(layerId)) {
+          mapStore.map?.removeLayer(layerId);
+        }
+      });
+    }
+  });
+
+  //Add the layers of the selected visualisation
+  const selectedVisualisation: Visualisation = VISUALISATION[visualisationId];
+
+  selectedVisualisation.layers.forEach((layer) => {
+    mapStore.map?.addLayer(LAYERS[layer]);
+  });
+};
 
 onUnmounted(() => {
   mapStore.cleanupMap();
