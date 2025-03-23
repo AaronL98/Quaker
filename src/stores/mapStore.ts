@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import mapboxgl, { LngLat } from 'mapbox-gl';
-import type { Map as MapboxMap, StyleSpecification } from 'mapbox-gl';
+import type { Map, StyleSpecification } from 'mapbox-gl';
 import { VISUALISATION } from '@/consts/visualisations';
 
 export const useMapStore = defineStore('map', () => {
-  const map = ref<MapboxMap | null>(null);
+  const map = ref<Map | null>(null);
   const localStyle = ref<StyleSpecification | undefined>(undefined);
   const selectedVisualisationId = ref<string>(VISUALISATION.NONE.id);
 

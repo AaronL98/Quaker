@@ -16,10 +16,18 @@ import { getTimeAgo, formatDateTime } from '@/helpers/formatDate';
 import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
-import mapboxgl, { LngLat, MapMouseEvent, type GeoJSONFeature, type LngLatLike } from 'mapbox-gl';
+import mapboxgl, {
+  LngLat,
+  MapMouseEvent,
+  type GeoJSONFeature,
+  type LngLatLike,
+  type Popup,
+  type Map,
+  type GeoJSONSource,
+} from 'mapbox-gl';
 import type { Feature, FeatureCollection, Polygon, Point, GeoJsonProperties } from 'geojson';
 
-import { LAYERS } from '@/consts/layers';
+import { EXCLUDED_FILTER_LAYERS, LAYERS } from '@/consts/layers';
 import { VISUALISATION, type Visualisation } from '@/consts/visualisations';
 
 const mapStore = useMapStore();
@@ -29,7 +37,7 @@ const earthquakeStateStore = useEarthquakeStateStore();
 const { selectedEarthquakeId } = storeToRefs(earthquakeStateStore);
 const { selectedVisualisationId } = storeToRefs(mapStore);
 
-const popup = ref<mapboxgl.Popup | null>(null);
+const popup = ref<Popup | null>(null);
 
 const addAtmosphere = () => {
   mapStore.map?.setFog({
@@ -95,12 +103,13 @@ const addEarthquakeMagnitudePolygonSource = () => {
     map.removeSource('earthquakes-magnitude-polygons');
   }
 
+  // @ts-ignore
   const rawData = sourceDataStore.getSourceData('earthquakes')?.data.features ?? []; // Ensure it's always an array
 
   const data: FeatureCollection<Point, GeoJsonProperties> = {
     type: 'FeatureCollection',
     features: rawData.filter(
-      (feature): feature is Feature<Point> => feature.geometry.type === 'Point',
+      (feature: Feature): feature is Feature<Point> => feature.geometry.type === 'Point',
     ),
   };
 
@@ -162,7 +171,7 @@ const updateSelectedEarthquake = (earthquakeId: string | null | undefined) => {
 
   const earthquakeFeature = sourceDataStore
     .getSourceData('earthquakes')
-    ?.data.features.find((feature) => feature.id === earthquakeId);
+    ?.data.features.find((feature: Feature) => feature.id === earthquakeId);
 
   if (!earthquakeFeature) {
     console.error('Earthquake feature not found');
@@ -260,13 +269,19 @@ onMounted(async () => {
 });
 
 const addVisualisationLayers = (visualisationId: string) => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add visualisation layers');
+    return;
+  }
+
   //Remove the layers of all other VISUALISATION consts if they exist on the map
   Object.values(VISUALISATION).forEach((visualisation: Visualisation) => {
     //If the visualisation is not the selected one, remove its layers
     if (visualisation.id !== visualisationId) {
       visualisation.layers.forEach((layerId) => {
         //If the layer exists, remove it
-        if (mapStore.map?.getLayer(layerId)) {
+        if (map.getLayer(layerId)) {
           //Remove any event listeners for the layer
           switch (layerId) {
             case LAYERS.EARTHQUAKES.id:
@@ -280,7 +295,7 @@ const addVisualisationLayers = (visualisationId: string) => {
               break;
           }
 
-          mapStore.map?.removeLayer(layerId);
+          map.removeLayer(layerId);
         }
       });
     }
@@ -290,7 +305,13 @@ const addVisualisationLayers = (visualisationId: string) => {
   const selectedVisualisation: Visualisation = VISUALISATION[visualisationId];
 
   selectedVisualisation.layers.forEach((layer) => {
-    mapStore.map?.addLayer(LAYERS[layer]);
+    map.addLayer(LAYERS[layer]);
+
+    //Update the filters for layers that are not excluded from layer-based filtering
+    if (!EXCLUDED_FILTER_LAYERS.includes(layer)) {
+      earthquakeStateStore.updateLayerFilter(map as Map, layer);
+    }
+
     switch (layer) {
       case LAYERS.EARTHQUAKES.id:
         togglePointClickHandler(LAYERS.EARTHQUAKES.id, true);
@@ -306,13 +327,13 @@ const addVisualisationLayers = (visualisationId: string) => {
 
   //Set 2D/3D view based on the selected visualisation
   if (selectedVisualisation.dimension === '3D') {
-    mapStore.map?.easeTo({
+    map.easeTo({
       pitch: 60,
       bearing: 0,
       duration: 500,
     });
   } else {
-    mapStore.map?.easeTo({
+    map.easeTo({
       pitch: 0,
       bearing: 0,
       duration: 500,
@@ -361,7 +382,7 @@ const toggleClusterClickHandler = (layerId: string, enabled: boolean) => {
     if (!feature || feature.geometry.type !== 'Point') return;
 
     const clusterId = feature.properties?.cluster_id;
-    const source = mapStore.map?.getSource('earthquakes-clustered') as mapboxgl.GeoJSONSource;
+    const source = mapStore.map?.getSource('earthquakes-clustered') as GeoJSONSource;
 
     source?.getClusterExpansionZoom(clusterId, (err, zoom) => {
       if (err) return;

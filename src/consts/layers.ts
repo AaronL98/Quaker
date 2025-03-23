@@ -1,7 +1,9 @@
+import type { Layer, ExpressionSpecification, PaintSpecification } from 'mapbox-gl';
+
 interface LayerConsts {
-  [key: string]: mapboxgl.Layer;
+  [key: string]: Layer;
 }
-const magnitudeColorExpression: mapboxgl.ExpressionSpecification = [
+const magnitudeColorExpression: ExpressionSpecification = [
   'case',
   ['<', ['get', 'mag'], 3],
   '#008236', // Green for mag < 3
@@ -12,7 +14,7 @@ const magnitudeColorExpression: mapboxgl.ExpressionSpecification = [
   '#FFFFFF', // Default color (optional, in case mag is missing)
 ];
 
-const interpolatedMagnitudeColorExpression: mapboxgl.ExpressionSpecification = [
+const interpolatedMagnitudeColorExpression: ExpressionSpecification = [
   'interpolate',
   ['linear'],
   ['get', 'mag'],
@@ -21,16 +23,14 @@ const interpolatedMagnitudeColorExpression: mapboxgl.ExpressionSpecification = [
   2,
   '#0f0',
   4,
-  '#ff0',
+  '#ffff00',
   6,
-  '#f90',
-  8,
   '#f60',
-  10,
-  '#f00',
+  8,
+  '#F00',
 ];
 
-const interpolatedMagnitudeHeightExpression: mapboxgl.ExpressionSpecification = [
+const interpolatedMagnitudeHeightExpression: ExpressionSpecification = [
   'interpolate',
   ['linear'],
   ['get', 'mag'],
@@ -48,7 +48,7 @@ const interpolatedMagnitudeHeightExpression: mapboxgl.ExpressionSpecification = 
   1500000,
 ];
 
-const basicPointStyle: mapboxgl.PaintSpecification = {
+const basicPointStyle: PaintSpecification = {
   'circle-color': magnitudeColorExpression,
   'circle-radius': 6,
   'circle-stroke-width': 2,
@@ -112,3 +112,10 @@ export const LAYERS: LayerConsts = {
     },
   },
 };
+
+//Layers with clustered source do not have the properties we need to filter on layer, so filtering happens at source level
+export const EXCLUDED_FILTER_LAYERS = [
+  LAYERS.CLUSTERED_EARTHQUAKES.id,
+  LAYERS.CLUSTERED_EARTHQUAKES_COUNT.id,
+  LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id,
+];
