@@ -21,13 +21,18 @@ export const VISUALISATION: VisualisationConsts = {
     layers: [LAYERS.EARTHQUAKES.id],
     dimension: '2D',
   },
-  //   CLUSTER: {
-  //     id: 'cluster',
-  //     name: 'Cluster',
-  //     description: 'Earthquakes clustered together based on proximity',
-  //     icon: 'mdi-chart-bubble',
-  //     layers: [],
-  //   },
+  CLUSTER: {
+    id: 'CLUSTER',
+    name: 'Cluster',
+    description: 'Earthquakes clustered together based on proximity',
+    icon: 'mdi-chart-bubble',
+    layers: [
+      LAYERS.CLUSTERED_EARTHQUAKES.id,
+      LAYERS.CLUSTERED_EARTHQUAKES_COUNT.id,
+      LAYERS.CLUSTERED_EARTHQUAKE_UNCLUSTERED_POINTS.id,
+    ],
+    dimension: '2D',
+  },
   //   HEATMAP: {
   //     id: 'heatmap',
   //     name: 'Heatmap',
