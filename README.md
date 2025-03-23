@@ -88,7 +88,7 @@ npm run dev
 
 Vite should give you a `localhost` URL where you can access the app.
 
-## The detailed stuff
+## Approach and considerations
 
 ### UX and UI approach
 

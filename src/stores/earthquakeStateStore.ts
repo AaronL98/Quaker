@@ -6,7 +6,7 @@ import { useSourceDataStore } from '@/stores/sourceDataStore';
 
 import { LAYERS, EXCLUDED_FILTER_LAYERS } from '@/consts/layers';
 import { VISUALISATION } from '@/consts/visualisations';
-import type { Layer, Source, GeoJSONSource, ExpressionSpecification, Map, Layer } from 'mapbox-gl';
+import type { Layer, GeoJSONSource, ExpressionSpecification, Map } from 'mapbox-gl';
 
 export const useEarthquakeStateStore = defineStore('earthquakeState', () => {
   const selectedEarthquakeId = ref<string | null>();
