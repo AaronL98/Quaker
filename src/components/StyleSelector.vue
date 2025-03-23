@@ -42,14 +42,14 @@ const setStyle = async (styleUrl: string) => {
     <Button
       v-tooltip.left="'Select a map style'"
       @click="toggle"
-      icon="mdi mdi-layers"
+      icon="mdi mdi-earth"
       class="shadow-xl"
       size="large"
       severity="secondary"
       rounded />
 
     <Popover ref="popover">
-      <span class="block font-medium mb-2">Style selector </span>
+      <span class="block font-medium mb-2">Map style </span>
       <div class="flex gap-4">
         <OverlayBadge
           v-for="style in MAP_STYLES_LIST"
