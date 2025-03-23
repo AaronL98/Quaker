@@ -1,20 +1,60 @@
 # Welcome to Quaker
 
-This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
-![image](https://github.com/user-attachments/assets/dde752de-a593-4a19-85c4-fd4f4569c7f9)
+This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php). ![image](https://github.com/user-attachments/assets/dde752de-a593-4a19-85c4-fd4f4569c7f9)
 
-### Supports ☀️ Light and 🌙 Dark mode
-![image](https://github.com/user-attachments/assets/f56c2305-ce79-4f5d-b45d-18ccc445fd77)
+## Features
 
-## Visualisations
+### 📈 Visualisations
+
+The following integrations are available in the app, using the visualisation button.
+
 - None
 - Clustered
 - Heatmap
 - 3D Magnitudes
+<details>
+    <summary>See more</summary>
+    <img></img>
+</details>
+
+### 🔎 Advanced filters
+
+You can refine the earthquakes shown on the map and in the list, using place names and date ranges. Another future addition could be a range slider for magnitude.
+
+<details>
+    <summary>See more</summary>
+    <img></img>
+</details>
+
+### 🎨 Map style selector
+
+Using the style selector, the map style can be changed to any of the following:
+
+- Streets
+- Light
+- Dark
+- Satellite
+<details>
+    <summary>See more</summary>
+    <img></img>
+</details>
+
+### 🌙 Light or dark mode
+
+Seamlessly switch between light or dark interfaces using the theme toggle.
+
+<details>
+    <summary>See more</summary>
+    <img src="https://github.com/user-attachments/assets/f56c2305-ce79-4f5d-b45d-18ccc445fd77"></img>
+</details>
 
 ## Run Quaker Locally
 
 ### Clone this repository
+
+```shell
+git clone https://github.com/AaronL98/Quaker.git
+```
 
 ### Navigate to this repository
 
@@ -47,3 +87,52 @@ npm run dev
 ```
 
 Vite should give you a `localhost` URL where you can access the app.
+
+## The detailed stuff
+
+### UX and UI approach
+
+I decided to go for a 'floating module' approach, where the full application is just a single page; the map. Using an absolute and full-screen layout to position the map, I was able to add a flex box ontop of the entire screen to position any floating elements. By disabling pointer-events on the flexbox, users can still interact with the map, and re-enabling pointer events on any of the components that are within the flexbox keeps clicks valid on UI elements.
+
+The layout consists of:
+
+- A list of earthquakes
+  - Users can filter and refine the earthquakes both on the map and in the list
+  - Users can select an earthquake from the list and see more information about it on the map
+  - Users can select an earthquake on the map, and find the list will scroll to show it.
+- Visualisation selector
+  - The only 'primary' colour button, with a clear call to action for the user that this is key functionality of the app
+  - Users can select from a range of different visualisations to better understand the data on the map
+  - A simple button with a menu within a popover
+- Map style selector
+  - Easily change the map style, with 4 different styles implemented
+  - Changing the style automatically keeps the layers, sources, visualisations on the map.
+- Theme switcher
+  - The app is in light mode by default, but can be switched to dark mode with the click of a button
+  - All UI elements will shift colour to the light or dark variant
+
+### Technologies and packages used
+
+The application is built with Vite using Vue.js
+
+Packages used:
+
+- `Material Design Icons` - Material Design Icons font, for a wide range of icons that can be used in any component.
+- `Tailwind CSS` - The superior styling framework, easy to style elements quickly, and easy to switch classes based on app theme (light/dark).
+- `Turf` - Used to convert (buffer) earthquake points, to circle polygons in order to extrude them for the 3D Magnitude visualisation.
+- `Axios` - For fetching the remote earthquake data from USGS.gov.
+- `Mapbox-gl` - Map platform, best option out there.
+- `Pinia` - To create stores, that hold reference to the map, applied filters, filtered source data, etc.
+  - I only previously had experience with VueX before this. After using Pinia, I'll be switching straight away!
+- `PrimeVue` - Vue.js component framework, with beautiful and simple components.
+  - I've been using this for the past few months and thoroughly enjoying it.
+- `tailwindcss-primeui` - PrimeVue's tailwind extension, which allows usage of PrimeVue theme colours inside Tailwind classes.
+- `vue-router` - Probably did not need to set this up since the application is only one page, but it's just common practice at this point.
+
+### Performance considerations
+
+Initially I considered using USGS.gov's 7-day earthquake data source purely due to volume of data, and started implementing with that initially. I noticed the 30-day data source was proving underperformant when rendering the list of earthquakes (typically over 10,000). I virtualised the Listbox holding the earthquake items and noticed an instant performance improvement.
+
+The only consideration I have is sometimes clicking an earthquake on the map, the virtual list box will attempt to scroll to that earthquake and there is a slight delay. This could be a future improvement.
+
+The map itself performs well with lots of features added.
