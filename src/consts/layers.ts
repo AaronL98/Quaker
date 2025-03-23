@@ -4,7 +4,7 @@ interface LayerConsts {
 
 export const LAYERS: LayerConsts = {
   EARTHQUAKES: {
-    id: 'earthquakes',
+    id: 'EARTHQUAKES',
     type: 'circle',
     source: 'earthquakes',
     paint: {
@@ -15,7 +15,7 @@ export const LAYERS: LayerConsts = {
     },
   },
   THREE_D_MAGNITUDES: {
-    id: '3d-magnitudes',
+    id: 'THREE_D_MAGNITUDES',
     type: 'fill-extrusion',
     source: 'earthquakes-magnitude-polygons',
     paint: {
