@@ -14,7 +14,9 @@ The following integrations are available in the app, using the visualisation but
 - 3D Magnitudes
 <details>
     <summary>See more</summary>
-    <img></img>
+    <img src="https://github.com/user-attachments/assets/93c79bd6-c65e-4b9c-ad81-a0f1758f7283"></img>
+    
+
 </details>
 
 ### 🔎 Advanced filters
