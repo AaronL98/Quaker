@@ -23,13 +23,11 @@ const interpolatedMagnitudeColorExpression: ExpressionSpecification = [
   2,
   '#0f0',
   4,
-  '#ff0',
+  '#ffff00',
   6,
-  '#f90',
-  8,
   '#f60',
-  10,
-  '#f00',
+  8,
+  '#F00',
 ];
 
 const interpolatedMagnitudeHeightExpression: ExpressionSpecification = [
