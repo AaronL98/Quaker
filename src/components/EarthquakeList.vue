@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch, ref } from 'vue';
 
 //Components
 import Card from 'primevue/card';
@@ -25,6 +25,8 @@ const sourceDataStore = useSourceDataStore();
 const earthquakeStateStore = useEarthquakeStateStore();
 
 const { selectedEarthquakeId, filterSearchTerm, filterDates } = storeToRefs(earthquakeStateStore);
+
+const listbox = ref();
 
 const minimumDate = computed<Date>(() => {
   //Return date 30 days ago
@@ -59,6 +61,19 @@ const earthquakes = computed<Earthquake[]>(() => {
   });
 
   return mappedData;
+});
+
+watch(selectedEarthquakeId, (newValue) => {
+  //When selected earthquake changes, scroll to the item in the list
+  const selectedEarthquake = earthquakes.value.find((earthquake) => earthquake.id === newValue);
+
+  if (selectedEarthquake) {
+    const index = earthquakes.value.indexOf(selectedEarthquake);
+
+    if (index !== -1) {
+      listbox.value.virtualScroller.scrollToIndex(index);
+    }
+  }
 });
 </script>
 <template>
@@ -109,6 +124,7 @@ const earthquakes = computed<Earthquake[]>(() => {
           :virtualScrollerOptions="{ itemSize: 55 }"
           class="w-full h-full"
           listStyle="height: 100%; max-height: unset"
+          ref="listbox"
           striped>
           <template #option="slotProps">
             <div class="flex">
