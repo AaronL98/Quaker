@@ -36,21 +36,19 @@ const maximumDate = computed<Date>(() => {
   return new Date();
 });
 
-const data = computed<FeatureCollection>(() => {
-  return (
-    sourceDataStore.getSourceData('earthquakes')?.data || {
-      type: 'FeatureCollection',
-      features: [],
-    }
-  );
+const filteredData = computed<FeatureCollection>(() => {
+  return {
+    type: 'FeatureCollection',
+    features: sourceDataStore.getFilteredSourceData('earthquakes').features,
+  };
 });
 
 const earthquakes = computed<Earthquake[]>(() => {
-  if (!data.value) {
+  if (!filteredData.value) {
     return [];
   }
 
-  const mappedData: Earthquake[] = data.value.features.map((feature: Feature) => {
+  const mappedData: Earthquake[] = filteredData.value.features.map((feature: Feature) => {
     return {
       id: feature.id ? String(feature.id) : 'unknown-id',
       title: feature.properties?.title,
@@ -61,36 +59,6 @@ const earthquakes = computed<Earthquake[]>(() => {
   });
 
   return mappedData;
-});
-
-const filteredEarthquakes = computed<Earthquake[]>(() => {
-  return earthquakes.value.filter((earthquake: Earthquake) => {
-    // If search term exists, check if place includes it
-    if (
-      filterSearchTerm.value &&
-      !earthquake.place.toLowerCase().includes(filterSearchTerm.value.toLowerCase())
-    ) {
-      return false;
-    }
-
-    // Date filtering
-    if (earthquakeStateStore.filterDates?.length === 2) {
-      const earthquakeDate = new Date(earthquake.time);
-
-      const startDate = new Date(earthquakeStateStore.filterDateFromTimestamp);
-      startDate.setHours(0, 0, 0, 0);
-
-      const endDate = new Date(earthquakeStateStore.filterDateToTimestamp);
-      endDate.setHours(23, 59, 59, 999);
-
-      if (earthquakeDate < startDate || earthquakeDate > endDate) {
-        return false;
-      }
-    }
-
-    // If we didn't return false above, this earthquake passes all filters
-    return true;
-  });
 });
 </script>
 <template>
@@ -128,14 +96,14 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
       </DatePicker>
 
       <span class="text-sm text-surface-500 dark:text-surface-400 mx-auto"
-        >Showing {{ filteredEarthquakes.length }} earthquakes</span
+        >Showing {{ earthquakes.length }} earthquakes</span
       >
 
       <div class="grow">
         <!-- Virtually scrolls to handle lots of results -->
         <Listbox
           v-model="selectedEarthquakeId"
-          :options="filteredEarthquakes"
+          :options="earthquakes"
           optionLabel="place"
           optionValue="id"
           :virtualScrollerOptions="{ itemSize: 55 }"
