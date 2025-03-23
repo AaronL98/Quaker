@@ -145,7 +145,7 @@ const filteredEarthquakes = computed<Earthquake[]>(() => {
           <template #option="slotProps">
             <div class="flex">
               <span
-                :class="`mdi mdi-ice ${getMagnitudeIcon(
+                :class="`mdi ${getMagnitudeIcon(
                   slotProps.option.mag,
                 )} text-xl mr-2 my-auto`"></span>
 
