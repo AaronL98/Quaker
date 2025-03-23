@@ -33,13 +33,14 @@ export const VISUALISATION: VisualisationConsts = {
     ],
     dimension: '2D',
   },
-  //   HEATMAP: {
-  //     id: 'heatmap',
-  //     name: 'Heatmap',
-  //     description: 'Heatmap of earthquakes showing areas of high activity',
-  //     icon: 'mdi-fire',
-  //     layers: [],
-  //   },
+  HEATMAP: {
+    id: 'HEATMAP',
+    name: 'Heatmap',
+    description: 'Heatmap of earthquakes showing areas of high activity',
+    icon: 'mdi-fire',
+    layers: [LAYERS.HEATMAP.id],
+    dimension: '2D',
+  },
   THREE_D_MAGNITUDES: {
     id: 'THREE_D_MAGNITUDES',
     name: '3D Magnitudes',
