@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import StyleSelector from '@/components/StyleSelector.vue';
+import VisualisationSelector from '@/components/VisualisationSelector.vue';
 import EarthquakeList from '@/components/EarthquakeList.vue';
 import { useMapStore } from '@/stores/mapStore';
 import { useSourceDataStore } from '@/stores/sourceDataStore';
@@ -12,13 +13,29 @@ import { getMagnitudeIcon } from '@/helpers/getMagnitudeIcon';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl, { LngLat } from 'mapbox-gl';
+import * as turf from '@turf/turf';
+import type { Feature, FeatureCollection, Polygon, Point, GeoJsonProperties } from 'geojson';
+import { LAYERS } from '@/consts/layers';
+import { VISUALISATION, type Visualisation } from '@/consts/visualisations';
 
 const mapStore = useMapStore();
 const sourceDataStore = useSourceDataStore();
 const earthquakeStateStore = useEarthquakeStateStore();
+
 const { selectedEarthquakeId } = storeToRefs(earthquakeStateStore);
+const { selectedVisualisationId } = storeToRefs(mapStore);
 
 const popup = ref<mapboxgl.Popup | null>(null);
+
+const addAtmosphere = () => {
+  mapStore.map?.setFog({
+    color: 'rgb(46, 120, 135)',
+    'high-color': 'rgb(20, 55, 155)',
+    'horizon-blend': 0.01,
+    'space-color': 'rgb(11, 11, 25)',
+    'star-intensity': 0.3,
+  });
+};
 
 const addEarthquakeSource = () => {
   const map = mapStore.map;
@@ -38,41 +55,58 @@ const addEarthquakeSource = () => {
   });
 };
 
-// Function to add earthquake layers
-const addEarthquakeLayers = () => {
+const addEarthquakeMagnitudePolygonSource = () => {
+  //Adds a source for the earthquakes as polygons, size based on magnitude
   const map = mapStore.map;
   if (!map) {
-    console.error('Map not initialized when trying to add earthquake layer');
+    console.error('Map not initialized when trying to add earthquake magnitude polygon source');
     return;
   }
 
-  if (map.getLayer('earthquakes')) {
-    console.error('Earthquake layer already exists');
+  if (map.getSource('earthquakes-magnitude-polygons')) {
+    console.warn(
+      'Earthquake magnitude polygon source already exists, removing it before adding it again',
+    );
+    map.removeSource('earthquakes-magnitude-polygons');
   }
 
-  // Regular earthquakes layer
-  map.addLayer({
-    id: 'earthquakes',
-    type: 'circle',
-    source: 'earthquakes',
-    paint: {
-      'circle-color': '#f00',
-      'circle-radius': 6,
-      'circle-stroke-width': 1,
-      'circle-stroke-color': '#fff',
-    },
-  });
+  const rawData = sourceDataStore.getSourceData('earthquakes')?.data.features ?? []; // Ensure it's always an array
 
-  //Can add more layers here, like heatmap, etc.
-};
+  const data: FeatureCollection<Point, GeoJsonProperties> = {
+    type: 'FeatureCollection',
+    features: rawData.filter(
+      (feature): feature is Feature<Point> => feature.geometry.type === 'Point',
+    ),
+  };
 
-const addAtmosphere = () => {
-  mapStore.map?.setFog({
-    color: 'rgb(46, 120, 135)',
-    'high-color': 'rgb(20, 55, 155)',
-    'horizon-blend': 0.01,
-    'space-color': 'rgb(11, 11, 25)',
-    'star-intensity': 0.3,
+  if (!data) {
+    console.error('No data found for earthquake magnitude polygons');
+    return;
+  }
+
+  const polygons: FeatureCollection<Polygon> = {
+    type: 'FeatureCollection',
+    features: (data?.features ?? []).map((feature: Feature<Point>): Feature<Polygon> => {
+      const magnitude = feature.properties?.mag || 0;
+      // Radius based on magnitude - Magnitude 0 = 0.2km, Magnitude 10 = 30km
+      const radius = Math.max(magnitude * 10, 0.2);
+
+      const circle = turf.circle(feature.geometry.coordinates, radius, {
+        steps: 64,
+        units: 'kilometers',
+      });
+
+      return {
+        type: 'Feature',
+        geometry: circle.geometry as Polygon, // Ensure the geometry is a Polygon
+        properties: feature.properties || {}, // Keep properties or set an empty object
+      };
+    }),
+  };
+
+  map.addSource('earthquakes-magnitude-polygons', {
+    type: 'geojson',
+    data: polygons,
   });
 };
 
@@ -137,14 +171,14 @@ const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
           <span class="text-sm">${getTimeAgo(timestamp)}</span>
         </div>
         <div class="border-1 rounded-md border-surface-300 bg-surface-100 dark:border-surface-700 dark:bg-surface-800 p-2 text-sm">
-        
+
           <div>Magnitude: ${magnitude}</div>
           <div>Date ${formatDateTime(timestamp)}</div>
           <div>Coordinates:</div>
           <div class="ml-2">Lat: ${coords.lat.toFixed(2)}</div>
           <div class="ml-2">Lat: ${coords.lng.toFixed(2)}</div>
         </div>
-      
+
       </div>
     `,
     )
@@ -162,20 +196,20 @@ onMounted(async () => {
   //Load the data from the USGS Earthquake API and add it to the map
   mapStore.map?.on('load', async () => {
     await loadData(
-      //All over 1 mag, the last week
-      //'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson',
-      //All the last month
       'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
       'earthquakes',
     );
 
     addEarthquakeSource();
-    addEarthquakeLayers();
+    addEarthquakeMagnitudePolygonSource();
+    addVisualisationLayers(selectedVisualisationId.value);
     addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
       addEarthquakeSource();
-      addEarthquakeLayers();
+      addEarthquakeMagnitudePolygonSource();
+      addVisualisationLayers(selectedVisualisationId.value);
+
       addAtmosphere();
 
       //TODO: Re-apply the selected earthquake if one is selected
@@ -190,7 +224,48 @@ onMounted(async () => {
     },
     { immediate: true },
   );
+
+  watch(selectedVisualisationId, (newValue, oldValue) => {
+    if (!newValue || !oldValue) return;
+
+    addVisualisationLayers(newValue);
+  });
 });
+
+const addVisualisationLayers = (visualisationId: string) => {
+  //Remove the layers of all other VISUALISATION consts if they exist on the map
+  Object.values(VISUALISATION).forEach((visualisation: Visualisation) => {
+    if (visualisation.id !== visualisationId) {
+      visualisation.layers.forEach((layerId) => {
+        if (mapStore.map?.getLayer(layerId)) {
+          mapStore.map?.removeLayer(layerId);
+        }
+      });
+    }
+  });
+
+  //Add the layers of the selected visualisation
+  const selectedVisualisation: Visualisation = VISUALISATION[visualisationId];
+
+  selectedVisualisation.layers.forEach((layer) => {
+    mapStore.map?.addLayer(LAYERS[layer]);
+  });
+
+  //Set 2D/3D view based on the selected visualisation
+  if (selectedVisualisation.dimension === '3D') {
+    mapStore.map?.easeTo({
+      pitch: 60,
+      bearing: 0,
+      duration: 500,
+    });
+  } else {
+    mapStore.map?.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 500,
+    });
+  }
+};
 
 onUnmounted(() => {
   mapStore.cleanupMap();
@@ -222,7 +297,10 @@ const loadData = async (endpoint: string, name: string) => {
       <div class="flex h-full">
         <!--Flexbox for all UI elements-->
         <EarthquakeList class="pointer-events-auto" />
-        <StyleSelector class="ml-auto pointer-events-auto" />
+        <div class="flex flex-col ml-auto">
+          <VisualisationSelector class="pointer-events-auto mb-4" />
+          <StyleSelector class="pointer-events-auto" />
+        </div>
       </div>
     </div>
   </div>
