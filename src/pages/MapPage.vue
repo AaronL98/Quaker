@@ -250,6 +250,21 @@ const addVisualisationLayers = (visualisationId: string) => {
   selectedVisualisation.layers.forEach((layer) => {
     mapStore.map?.addLayer(LAYERS[layer]);
   });
+
+  //Set 2D/3D view based on the selected visualisation
+  if (selectedVisualisation.dimension === '3D') {
+    mapStore.map?.easeTo({
+      pitch: 60,
+      bearing: 0,
+      duration: 500,
+    });
+  } else {
+    mapStore.map?.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 500,
+    });
+  }
 };
 
 onUnmounted(() => {
