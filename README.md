@@ -1,8 +1,16 @@
 # Welcome to Quaker
 
 This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php).
-![image](https://github.com/user-attachments/assets/78c538dc-a6fd-48e0-bb02-b17ada28fefc)
+![image](https://github.com/user-attachments/assets/dde752de-a593-4a19-85c4-fd4f4569c7f9)
 
+### Supports ☀️ Light and 🌙 Dark mode
+![image](https://github.com/user-attachments/assets/f56c2305-ce79-4f5d-b45d-18ccc445fd77)
+
+## Visualisations
+- None
+- Clustered
+- Heatmap
+- 3D Magnitudes
 
 ## Run Quaker Locally
 
