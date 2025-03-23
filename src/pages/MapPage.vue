@@ -55,6 +55,27 @@ const addEarthquakeSource = () => {
   });
 };
 
+const addClusteredEarthquakeSource = () => {
+  const map = mapStore.map;
+  if (!map) {
+    console.error('Map not initialized when trying to add clustered earthquake source');
+    return;
+  }
+
+  if (map.getSource('earthquakes-clustered')) {
+    console.warn('Clustered earthquake source already exists, removing it before adding it again');
+    map.removeSource('earthquakes-clustered');
+  }
+
+  map.addSource('earthquakes-clustered', {
+    type: 'geojson',
+    data: sourceDataStore.getSourceData('earthquakes')?.data,
+    cluster: true,
+    clusterMaxZoom: 14,
+    clusterRadius: 100,
+  });
+};
+
 const addEarthquakeMagnitudePolygonSource = () => {
   //Adds a source for the earthquakes as polygons, size based on magnitude
   const map = mapStore.map;
@@ -185,7 +206,7 @@ const updateSelectedEarthquake = (earthquakeId: number | null | undefined) => {
     // @ts-ignore
     .addTo(map);
 
-  map.flyTo({ center: coords, zoom: 6 });
+  map.flyTo({ center: coords, zoom: 5.5 });
 };
 
 onMounted(async () => {
@@ -201,12 +222,14 @@ onMounted(async () => {
     );
 
     addEarthquakeSource();
+    addClusteredEarthquakeSource();
     addEarthquakeMagnitudePolygonSource();
     addVisualisationLayers(selectedVisualisationId.value);
     addAtmosphere();
 
     mapStore.map?.on('style.load', () => {
       addEarthquakeSource();
+      addClusteredEarthquakeSource();
       addEarthquakeMagnitudePolygonSource();
       addVisualisationLayers(selectedVisualisationId.value);
 
