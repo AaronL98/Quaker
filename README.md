@@ -1,6 +1,6 @@
 # Welcome to Quaker
 
-This is a quick project I've written to plot and visualise real-time earthquake data, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php). ![image](https://github.com/user-attachments/assets/dde752de-a593-4a19-85c4-fd4f4569c7f9)
+Quaker is a Mapbox-driven app for exploring and visualising real-time earthquake data from the past 30 days, provided by [USGS.gov](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php). ![image](https://github.com/user-attachments/assets/dde752de-a593-4a19-85c4-fd4f4569c7f9)
 
 ## Features
 
@@ -14,16 +14,18 @@ The following integrations are available in the app, using the visualisation but
 - 3D Magnitudes
 <details>
     <summary>See more</summary>
-    <img></img>
+    <img src="https://github.com/user-attachments/assets/93c79bd6-c65e-4b9c-ad81-a0f1758f7283"></img>
+    
+
 </details>
 
 ### 🔎 Advanced filters
 
-You can refine the earthquakes shown on the map and in the list, using place names and date ranges. Another future addition could be a range slider for magnitude.
+You can refine the earthquakes shown on the map and in the list using place names and date ranges, a future addition could be a range slider for magnitude.
 
 <details>
     <summary>See more</summary>
-    <img></img>
+    <img src="https://github.com/user-attachments/assets/e0d51ce6-c9f2-44fc-a188-e8c641f13c7a"></img>
 </details>
 
 ### 🎨 Map style selector
@@ -36,7 +38,7 @@ Using the style selector, the map style can be changed to any of the following:
 - Satellite
 <details>
     <summary>See more</summary>
-    <img></img>
+    <img src="https://github.com/user-attachments/assets/8bad1fe4-efa5-4dc9-a32f-fa321fa4a377"></img>
 </details>
 
 ### 🌙 Light or dark mode
@@ -101,14 +103,14 @@ The layout consists of:
   - Users can select an earthquake from the list and see more information about it on the map
   - Users can select an earthquake on the map, and find the list will scroll to show it.
 - Visualisation selector
-  - The only 'primary' colour button, with a clear call to action for the user that this is key functionality of the app
+  - The only 'primary' colour button, with a clear call to action for the user that this is a key functionality of the app
   - Users can select from a range of different visualisations to better understand the data on the map
   - A simple button with a menu within a popover
 - Map style selector
   - Easily change the map style, with 4 different styles implemented
-  - Changing the style automatically keeps the layers, sources, visualisations on the map.
+  - Changing the style automatically keeps the layers, sources, and visualisations on the map.
 - Theme switcher
-  - The app is in light mode by default, but can be switched to dark mode with the click of a button
+  - The app is in light mode by default but can be switched to dark mode with the click of a button
   - All UI elements will shift colour to the light or dark variant
 
 ### Technologies and packages used
@@ -121,7 +123,7 @@ Packages used:
 - `Tailwind CSS` - The superior styling framework, easy to style elements quickly, and easy to switch classes based on app theme (light/dark).
 - `Turf` - Used to convert (buffer) earthquake points, to circle polygons in order to extrude them for the 3D Magnitude visualisation.
 - `Axios` - For fetching the remote earthquake data from USGS.gov.
-- `Mapbox-gl` - Map platform, best option out there.
+- `Mapbox-gl` - Map platform, the best option out there.
 - `Pinia` - To create stores, that hold reference to the map, applied filters, filtered source data, etc.
   - I only previously had experience with VueX before this. After using Pinia, I'll be switching straight away!
 - `PrimeVue` - Vue.js component framework, with beautiful and simple components.
@@ -131,8 +133,15 @@ Packages used:
 
 ### Performance considerations
 
-Initially I considered using USGS.gov's 7-day earthquake data source purely due to volume of data, and started implementing with that initially. I noticed the 30-day data source was proving underperformant when rendering the list of earthquakes (typically over 10,000). I virtualised the Listbox holding the earthquake items and noticed an instant performance improvement.
+Initially, I considered using USGS.gov's 7-day earthquake data source purely due to the volume of data, and started implementing that initially. I noticed the 30-day data source was proving underperformant when rendering the list of earthquakes (typically over 10,000). I virtualised the Listbox holding the earthquake items and noticed an instant performance improvement.
 
 The only consideration I have is sometimes clicking an earthquake on the map, the virtual list box will attempt to scroll to that earthquake and there is a slight delay. This could be a future improvement.
 
 The map itself performs well with lots of features added.
+
+### Next steps
+- Implement unit testing with Vitest
+  - Next steps for this project could be to add unit tests for all helper functions, and components.
+- End to end tests with Playwright
+  - My choice of end to end testing package would be Playwright, having worked with that and Cypress. Testing basic frontend logic would be a valid next step.
+  - Using an object model for the features within the app could prove beneficial, for addressing certain parts of the app without relying on `data-testid` properties
