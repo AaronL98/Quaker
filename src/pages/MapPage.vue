@@ -6,6 +6,7 @@ import { storeToRefs } from 'pinia';
 
 import StyleSelector from '@/components/StyleSelector.vue';
 import VisualisationSelector from '@/components/VisualisationSelector.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 import EarthquakeList from '@/components/EarthquakeList.vue';
 
 import { useMapStore } from '@/stores/mapStore';
@@ -469,7 +470,8 @@ const loadData = async (endpoint: string, name: string) => {
         <EarthquakeList class="pointer-events-auto" />
         <div class="flex flex-col ml-auto">
           <VisualisationSelector class="pointer-events-auto mb-4" />
-          <StyleSelector class="pointer-events-auto" />
+          <StyleSelector class="pointer-events-auto mb-4" />
+          <ThemeToggle class="pointer-events-auto" />
         </div>
       </div>
     </div>
