@@ -138,3 +138,10 @@ Initially, I considered using USGS.gov's 7-day earthquake data source purely due
 The only consideration I have is sometimes clicking an earthquake on the map, the virtual list box will attempt to scroll to that earthquake and there is a slight delay. This could be a future improvement.
 
 The map itself performs well with lots of features added.
+
+### Next steps
+- Implement unit testing with Vitest
+  - Next steps for this project could be to add unit tests for all helper functions, and components.
+- End to end tests with Playwright
+  - My choice of end to end testing package would be Playwright, having worked with that and Cypress. Testing basic frontend logic would be a valid next step.
+  - Using an object model for the features within the app could prove beneficial, for addressing certain parts of the app without relying on `data-testid` properties
